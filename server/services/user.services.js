@@ -6,6 +6,12 @@ const createUser = async ({ firstName, lastName, email, password }) => {
       throw new Error("Missing required fields");
     }
 
+    // Check if the user already exists
+    const existingUser = await userModel.findOne({  email });
+    if (existingUser) {
+      throw new Error("User already exists");
+    } 
+
     const user = await userModel.create({
       fullName: {
         firstName,

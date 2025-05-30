@@ -19,7 +19,7 @@ router.post(
   userController.registerUser
 );
 
-router.get(
+router.post(  // Changed from GET to POST
   "/login",
   [
     body("email").isEmail().withMessage("Invalid email"),
@@ -27,8 +27,9 @@ router.get(
       .isLength({ min: 6 })
       .withMessage("Password must be at least 6 characters long"),
   ],
-  userController.loginUser
+  userController.loginUser  // Removed authUser middleware
 );
 
+router.get("/logout", authUser, userController.logoutUser);
 
 export default router;

@@ -68,10 +68,6 @@ const loginUser = async (req, res, next) => {
     }
 };
 
-const getUserProfile = async (req, res, next) => {
-    return res.status(200).json(res.user);
-};
-
 export const logoutUser = async (req, res, next) => {
     const token = req.cookies.token || req.headers.authorization.split(' ')[1];
 
@@ -82,4 +78,4 @@ export const logoutUser = async (req, res, next) => {
     res.status(200).json({ message: 'Logged Out' });
 };
 
-export default { registerUser, loginUser, getUserProfile }
+export default { registerUser, loginUser, logoutUser };

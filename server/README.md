@@ -191,7 +191,8 @@ server/
 ├── middlewares/
 │   └── auth.middleware.js
 ├── services/
-│   └── evService.js
+│   ├── evServices.js
+│   └── user.services.js
 ├── db/
 │   └── db.js
 ├── .env

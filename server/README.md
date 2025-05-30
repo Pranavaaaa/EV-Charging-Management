@@ -1,15 +1,15 @@
-# Backend API Documentation
+# EV Charging Station API
 
-A RESTful API for user authentication and management built with Node.js, Express, and MongoDB.
+A RESTful API for managing EV charging stations built with Node.js, Express, and MongoDB.
 
 ## 🚀 Features
 
-- User registration and authentication
+- User authentication and authorization
+- CRUD operations for charging stations
+- Filtering stations by status and connector type
+- User-specific station management
 - JWT based authentication
-- Password hashing
-- Token blacklisting for logout
 - Input validation
-- Error handling
 
 ## 🛠️ Tech Stack
 
@@ -35,9 +35,9 @@ npm install
 
 3. Create .env file
 ```env
-PORT = 4000
-DB_CONNECT = your_mongodb_connection_string
-JWT_SECRET = your_jwt_secret
+PORT=4001
+DB_CONNECT=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
 ```
 
 4. Start the server
@@ -52,10 +52,8 @@ npm start
 #### Register User
 ```http
 POST /users/register
-```
+Content-Type: application/json
 
-**Request Body:**
-```json
 {
   "fullname": {
     "firstname": "string",
@@ -66,87 +64,68 @@ POST /users/register
 }
 ```
 
-**Response:**
-```json
-{
-  "message": "User Created Successfully",
-  "token": "string",
-  "user": {
-    "fullName": {
-      "firstName": "string",
-      "lastName": "string"
-    },
-    "email": "string",
-    "_id": "string"
-  }
-}
-```
-
-#### Login User
+#### Login
 ```http
 POST /users/login
-```
+Content-Type: application/json
 
-**Request Body:**
-```json
 {
   "email": "string",
   "password": "string"
 }
 ```
 
-**Response:**
-```json
-{
-  "token": "string",
-  "user": {
-    "fullName": {
-      "firstName": "string",
-      "lastName": "string"
-    },
-    "email": "string",
-    "_id": "string"
-  }
-}
-```
-
-#### Get User Profile
+#### Logout
 ```http
-GET /users/profile
-```
-
-**Headers:**
-```
+GET /users/logout
 Authorization: Bearer <token>
 ```
 
-**Response:**
-```json
+### Charging Stations
+
+#### Create Station
+```http
+POST /ev/stations
+Authorization: Bearer <token>
+Content-Type: application/json
+
 {
-  "fullName": {
-    "firstName": "string",
-    "lastName": "string"
-  },
-  "email": "string",
-  "_id": "string"
+  "name": "string",
+  "latitude": number,
+  "longitude": number,
+  "powerOutput": number,
+  "connectorType": "Type 1" | "Type 2" | "CCS" | "CHAdeMO" | "Other",
+  "status": "Active" | "Inactive"
 }
 ```
 
-#### Logout User
+#### Get User's Stations
 ```http
-POST /users/logout
-```
-
-**Headers:**
-```
+GET /ev/stations
 Authorization: Bearer <token>
 ```
 
-**Response:**
-```json
+Query Parameters:
+- `status`: Filter by status ("Active" or "Inactive")
+- `connectorType`: Filter by connector type
+
+#### Update Station
+```http
+PUT /ev/stations/:id
+Authorization: Bearer <token>
+Content-Type: application/json
+
 {
-  "message": "Logged Out"
+  "name": "string",
+  "status": "Active" | "Inactive",
+  // other updatable fields
 }
+```
+
+#### Delete Station
+```http
+DELETE /ev/stations/:id
+Authorization: Bearer <token>
 ```
 
 ## 🔒 Authentication
@@ -164,8 +143,8 @@ Authorization: Bearer <token>
 {
   "errors": [
     {
-      "msg": "Invalid email",
-      "param": "email",
+      "msg": "Invalid input",
+      "param": "field_name",
       "location": "body"
     }
   ]
@@ -179,26 +158,45 @@ Authorization: Bearer <token>
 }
 ```
 
-**409 Conflict**
+**403 Forbidden**
 ```json
 {
-  "message": "User already exists"
+  "success": false,
+  "message": "Not authorized to update this station"
 }
 ```
 
 ## 📝 Input Validation
 
-- Email must be valid
-- Password must be at least 6 characters long
-- First name must be at least 2 characters long
+### Charging Station Validation
+- Name: Required
+- Latitude: Required, must be a valid float
+- Longitude: Required, must be a valid float
+- Power Output: Required, must be a valid float
+- Connector Type: Must be one of: ["Type 1", "Type 2", "CCS", "CHAdeMO", "Other"]
 
-## 🛡️ Security Features
-
-- Password hashing using bcrypt
-- JWT token expiration
-- Token blacklisting for logout
-- CORS enabled
-- Input validation and sanitization
+## 📦 Directory Structure
+```
+server/
+├── controllers/
+│   ├── user.controller.js
+│   └── evController.js
+├── models/
+│   ├── user.model.js
+│   ├── chargingStationSchema.js
+│   └── blackListedTokens.js
+├── routes/
+│   ├── user.routes.js
+│   └── EvRoutes.js
+├── middlewares/
+│   └── auth.middleware.js
+├── services/
+│   └── evService.js
+├── db/
+│   └── db.js
+├── .env
+└── index.js
+```
 
 ## 🤝 Contributing
 

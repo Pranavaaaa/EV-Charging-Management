@@ -15,6 +15,12 @@ const registerUser = async (req, res, next) => {
 
       console.log(req.body, "user.controller");
 
+      // Check if user already exists
+      const existingUser = await userModel.find ({ email });
+      if (existingUser.length > 0) {
+        return res.status(409).json({ message: 'User already exists' });
+      }
+
       const hashPassword = await userModel.hashPassword(password);
 
       const user = await userServices.createUser({
@@ -26,7 +32,7 @@ const registerUser = async (req, res, next) => {
 
       const token = user.generateAuthToken();
 
-      return res.status(201).json({ token, user });
+      return res.status(201).json({ message:  'User Created Successfully' , token, user });
     } catch (error) {
       next(error);
     }

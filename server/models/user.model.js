@@ -23,9 +23,6 @@ const userSchema = new mongoose.Schema({
     required: true,
     select: false, // to exclude password from query results
   },
-  socketId: {
-    type: String,
-  },
 });
 
 userSchema.methods.generateAuthToken = function () {

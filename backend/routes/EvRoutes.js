@@ -21,5 +21,6 @@ router.post('/stations', authUser, validateStation, evController.createChargingS
 router.get('/stations', authUser, evController.getAllStations); // Added authUser middleware
 router.put('/stations/:id', authUser, validateStation, evController.updateStation);
 router.delete('/stations/:id', authUser, evController.deleteStation);
+router.get('/stations/:id', authUser, evController.getStationById);
 
 export default router;

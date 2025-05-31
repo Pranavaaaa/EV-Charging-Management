@@ -118,9 +118,34 @@ const deleteStation = async (req, res, next) => {
   }
 };
 
+const getStationById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { _id: userId } = req.user;
+
+    const station = await evServices.getStationById(id);
+    
+    // Check if user owns the station
+    if (station.userId.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to view this station'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: station
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   createChargingStation,
   getAllStations,
   updateStation,
-  deleteStation
+  deleteStation,
+  getStationById
 };

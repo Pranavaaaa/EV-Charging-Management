@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { apiService } from '../services/api'
 
 const router = useRouter()
 const route = useRoute()
@@ -27,35 +28,8 @@ const statusTypes = ['Active', 'Inactive']
 const fetchStationData = async () => {
   try {
     loading.value = true
-    const token = localStorage.getItem('token')
-
-    console.log("Fetching station data for ID:", stationId);
-    console.log("Using token:", token);
-
-    const response = await fetch(`http://localhost:4000/ev/stations/${stationId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    const data = await response.json()
-
-    console.log("Fetch data", data);
-
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch station')
-    }
-
-    // Populate form data
-    formData.value = {
-      name: data.data.name,
-      latitude: data.data.latitude,
-      longitude: data.data.longitude,
-      powerOutput: data.data.powerOutput,
-      status: data.data.status,
-      connectorType: data.data.connectorType
-    }
+    const data = await apiService.get(`/ev/stations/${stationId}`)
+    formData.value = data.data
   } catch (err) {
     error.value = err.message
   } finally {
@@ -83,37 +57,13 @@ const validateCoordinates = () => {
 
 const handleSubmit = async (e) => {
   e.preventDefault()
-  error.value = ''
-  
-  // Validate coordinates
   if (!validateCoordinates()) return
 
   try {
     loading.value = true
-    const token = localStorage.getItem('token')
-
-    const response = await fetch(`http://localhost:4000/ev/stations/${stationId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(formData.value)
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to update station')
-    }
-
+    await apiService.put(`/ev/stations/${stationId}`, formData.value)
     successMessage.value = 'Station updated successfully!'
-    
-    // Redirect after delay
-    setTimeout(() => {
-      router.push('/home')
-    }, 2000)
-
+    setTimeout(() => router.push('/home'), 2000)
   } catch (err) {
     error.value = err.message
   } finally {

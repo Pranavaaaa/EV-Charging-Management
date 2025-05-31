@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { apiService } from '../services/api'
 
 const router = useRouter()
 
@@ -48,22 +49,7 @@ const handleSubmit = async (e) => {
 
   try {
     loading.value = true
-    const token = localStorage.getItem('token')
-
-    const response = await fetch('http://localhost:4000/ev/stations', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(formData.value)
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to create station')
-    }
+    await apiService.post('/ev/stations', formData.value)
 
     successMessage.value = 'Station created successfully!'
     

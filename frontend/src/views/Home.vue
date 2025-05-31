@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { apiService } from '../services/api'
 
 const stations = ref([])
 const loading = ref(true)
@@ -11,21 +12,7 @@ const router = useRouter()
 const fetchStations = async () => {
   try {
     loading.value = true
-    const token = localStorage.getItem('token')
-    
-    const response = await fetch('http://localhost:4000/ev/stations', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to fetch stations')
-    }
-
-    stations.value = data.data
+    stations.value = (await apiService.get('/ev/stations')).data
   } catch (err) {
     error.value = err.message
   } finally {
@@ -38,21 +25,7 @@ const deleteStation = async (stationId) => {
   if (!confirm('Are you sure you want to delete this station?')) return
 
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch(`http://localhost:4000/ev/stations/${stationId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to delete station')
-    }
-
-    // Remove station from list
+    await apiService.delete(`/ev/stations/${stationId}`)
     stations.value = stations.value.filter(station => station._id !== stationId)
   } catch (err) {
     error.value = err.message

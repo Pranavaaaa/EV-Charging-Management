@@ -49,6 +49,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
+import { apiService } from '../services/api'
 
 const router = useRouter()
 const { login } = useAuth()
@@ -63,22 +64,10 @@ async function handleLogin() {
     loading.value = true
     error.value = ''
 
-    const response = await fetch('http://localhost:4000/users/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        email: email.value,
-        password: password.value
-      })
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Login failed')
-    }
+    const data = await apiService.post('/users/login', {
+      email: email.value,
+      password: password.value
+    }, false) // false because login doesn't require auth
 
     // Store token and user data
     localStorage.setItem('token', data.token)

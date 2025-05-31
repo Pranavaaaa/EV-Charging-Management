@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiService } from '../services/api'
 
@@ -44,6 +44,61 @@ const handleLogout = () => {
   router.push('/login')
 }
 
+// Add these new refs and constants
+const connectorTypes = ['Type 1', 'Type 2', 'CCS', 'CHAdeMO', 'Other']
+const filters = ref({
+  status: '',
+  powerOutput: '',
+  connectorType: ''
+})
+
+// Compute if any filters are active
+const isFiltersActive = computed(() => {
+  return Object.values(filters.value).some(value => value !== '')
+})
+
+// Filter stations based on selected criteria
+const filteredStations = computed(() => {
+  return stations.value.filter(station => {
+    // Status filter
+    if (filters.value.status && station.status !== filters.value.status) {
+      return false
+    }
+
+    // Power Output filter
+    if (filters.value.powerOutput) {
+      const power = parseFloat(station.powerOutput)
+      switch (filters.value.powerOutput) {
+        case '0-50':
+          if (power > 50) return false
+          break
+        case '51-100':
+          if (power <= 50 || power > 100) return false
+          break
+        case '101+':
+          if (power <= 100) return false
+          break
+      }
+    }
+
+    // Connector Type filter
+    if (filters.value.connectorType && station.connectorType !== filters.value.connectorType) {
+      return false
+    }
+
+    return true
+  })
+})
+
+// Clear all filters
+const clearFilters = () => {
+  filters.value = {
+    status: '',
+    powerOutput: '',
+    connectorType: ''
+  }
+}
+
 onMounted(fetchStations)
 </script>
 
@@ -78,6 +133,59 @@ onMounted(fetchStations)
         <h1>My Charging Stations</h1>
       </div>
 
+      <!-- Add Filters Section -->
+      <div class="filters-section">
+        <div class="filter-group">
+          <label for="statusFilter">Status</label>
+          <select 
+            id="statusFilter" 
+            v-model="filters.status" 
+            class="filter-select"
+          >
+            <option value="">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="powerFilter">Power Output</label>
+          <select 
+            id="powerFilter" 
+            v-model="filters.powerOutput" 
+            class="filter-select"
+          >
+            <option value="">All Power Outputs</option>
+            <option value="0-50">0-50 kW</option>
+            <option value="51-100">51-100 kW</option>
+            <option value="101+">Above 100 kW</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="connectorFilter">Connector Type</label>
+          <select 
+            id="connectorFilter" 
+            v-model="filters.connectorType" 
+            class="filter-select"
+          >
+            <option value="">All Connectors</option>
+            <option v-for="type in connectorTypes" :key="type" :value="type">
+              {{ type }}
+            </option>
+          </select>
+        </div>
+
+        <button 
+          class="clear-filters-button" 
+          @click="clearFilters"
+          v-if="isFiltersActive"
+        >
+          <i class="fas fa-times"></i>
+          Clear Filters
+        </button>
+      </div>
+
       <!-- Loading State -->
       <div v-if="loading" class="loading-container">
         <div class="spinner"></div>
@@ -110,7 +218,7 @@ onMounted(fetchStations)
             </tr>
           </thead>
           <tbody>
-            <tr v-for="station in stations" :key="station._id">
+            <tr v-for="station in filteredStations" :key="station._id">
               <td>{{ station.name }}</td>
               <td>
                 <span :class="['status-badge', station.status === 'Active' ? 'active' : 'inactive']">
@@ -237,6 +345,74 @@ onMounted(fetchStations)
   color: #2d3748;
   font-size: 2rem;
   font-weight: 600;
+}
+
+.filters-section {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 200px;
+}
+
+.filter-group label {
+  font-size: 0.875rem;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.filter-select {
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #2d3748;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-select:hover {
+  border-color: #cbd5e0;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.clear-filters-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #edf2f7;
+  border: none;
+  border-radius: 6px;
+  color: #4a5568;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clear-filters-button:hover {
+  background: #e2e8f0;
+  color: #2d3748;
+}
+
+.clear-filters-button i {
+  font-size: 0.75rem;
 }
 
 .table-container {
@@ -391,6 +567,21 @@ tbody tr:hover {
   .header-card {
     margin: 1rem auto;
     padding: 1rem;
+  }
+
+  .filters-section {
+    flex-direction: column;
+    padding: 1rem;
+  }
+
+  .filter-group {
+    width: 100%;
+  }
+
+  .clear-filters-button {
+    width: 100%;
+    justify-content: center;
+    margin-top: 0.5rem;
   }
 }
 </style>

@@ -5,6 +5,7 @@ import Home from '../views/Home.vue';
 import EditStation from '../views/EditStation.vue';
 import AddStation from '../views/AddStation.vue';
 import NotFound from '../views/NotFound.vue';
+import MapView from '../views/MapView.vue';
 
 const routes = [
   {
@@ -37,6 +38,12 @@ const routes = [
     path: '/edit-station/:id',
     name: 'EditStation',
     component: EditStation,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/map',
+    name: 'MapView',
+    component: MapView,
     meta: { requiresAuth: true }
   },
   {

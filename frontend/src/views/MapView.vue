@@ -1,123 +1,62 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { apiService } from '../services/api'
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { apiService } from '../services/api';
+import 'leaflet/dist/leaflet.css';
+import * as L from 'leaflet';
+import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet';
 
-const stations = ref([])
-const loading = ref(true)
-const error = ref(null)
-const router = useRouter()
+// Fix Leaflet default icon issue
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: new URL('leaflet/dist/images/marker-icon-2x.png', import.meta.url).href,
+  iconUrl: new URL('leaflet/dist/images/marker-icon.png', import.meta.url).href,
+  shadowUrl: new URL('leaflet/dist/images/marker-shadow.png', import.meta.url).href,
+});
+
+const router = useRouter();
+const stations = ref([]);
+const loading = ref(true);
+const error = ref(null);
+const center = ref([20.5937, 78.9629]); // India's center coordinates
+const zoom = ref(5);
 
 // Fetch all stations
 const fetchStations = async () => {
   try {
-    loading.value = true
-    stations.value = (await apiService.get('/ev/stations')).data
+    loading.value = true;
+    const response = await apiService.get('/ev/stations');
+    stations.value = response.data;
   } catch (err) {
-    error.value = err.message
+    error.value = err.message;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
-// Delete station
-const deleteStation = async (stationId) => {
-  if (!confirm('Are you sure you want to delete this station?')) return
+// Handle marker click
+const handleMarkerClick = (station) => {
+  // You can customize what happens when a marker is clicked
+  console.log('Station clicked:', station);
+};
 
-  try {
-    await apiService.delete(`/ev/stations/${stationId}`)
-    stations.value = stations.value.filter(station => station._id !== stationId)
-  } catch (err) {
-    error.value = err.message
-  }
-}
-
-// Edit station
-const editStation = (stationId) => {
-  router.push(`/edit-station/${stationId}`)
-}
-
-// Add logout handler
-const handleLogout = () => {
-  localStorage.removeItem('token')
-  localStorage.removeItem('user')
-  router.push('/login')
-}
-
-// Add these new refs and constants
-const connectorTypes = ['Type 1', 'Type 2', 'CCS', 'CHAdeMO', 'Other']
-const filters = ref({
-  status: '',
-  powerOutput: '',
-  connectorType: ''
-})
-
-// Compute if any filters are active
-const isFiltersActive = computed(() => {
-  return Object.values(filters.value).some(value => value !== '')
-})
-
-// Filter stations based on selected criteria
-const filteredStations = computed(() => {
-  return stations.value.filter(station => {
-    // Status filter
-    if (filters.value.status && station.status !== filters.value.status) {
-      return false
-    }
-
-    // Power Output filter
-    if (filters.value.powerOutput) {
-      const power = parseFloat(station.powerOutput)
-      switch (filters.value.powerOutput) {
-        case '0-50':
-          if (power > 50) return false
-          break
-        case '51-100':
-          if (power <= 50 || power > 100) return false
-          break
-        case '101+':
-          if (power <= 100) return false
-          break
-      }
-    }
-
-    // Connector Type filter
-    if (filters.value.connectorType && station.connectorType !== filters.value.connectorType) {
-      return false
-    }
-
-    return true
-  })
-})
-
-// Clear all filters
-const clearFilters = () => {
-  filters.value = {
-    status: '',
-    powerOutput: '',
-    connectorType: ''
-  }
-}
-
-onMounted(fetchStations)
+onMounted(() => {
+  fetchStations();
+});
 </script>
 
 <template>
-  <div class="page-container">
-    <!-- Header Card -->
+  <div class="map-container">
+    <!-- Header Card (similar to Home.vue) -->
     <div class="header-card">
       <div class="header-actions">
-        <button class="header-button map" @click="router.push('/map')">
-          <i class="fas fa-map-marked-alt"></i>
-          View Map
+        <button class="header-button list" @click="router.push('/home')">
+          <i class="fas fa-list"></i>
+          List View
         </button>
         <button class="header-button add" @click="router.push('/add-station')">
           <i class="fas fa-plus"></i>
           Add Station
-        </button>
-        <button class="header-button stats">
-          <i class="fas fa-chart-line"></i>
-          Statistics
         </button>
         <button class="header-button logout" @click="handleLogout">
           <i class="fas fa-sign-out-alt"></i>
@@ -126,66 +65,8 @@ onMounted(fetchStations)
       </div>
     </div>
 
-    <!-- Content Card -->
+    <!-- Map Content -->
     <div class="content-wrapper">
-      <!-- Header Section -->
-      <div class="header-section">
-        <h1>My Charging Stations</h1>
-      </div>
-
-      <!-- Add Filters Section -->
-      <div class="filters-section">
-        <div class="filter-group">
-          <label for="statusFilter">Status</label>
-          <select 
-            id="statusFilter" 
-            v-model="filters.status" 
-            class="filter-select"
-          >
-            <option value="">All Status</option>
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label for="powerFilter">Power Output</label>
-          <select 
-            id="powerFilter" 
-            v-model="filters.powerOutput" 
-            class="filter-select"
-          >
-            <option value="">All Power Outputs</option>
-            <option value="0-50">0-50 kW</option>
-            <option value="51-100">51-100 kW</option>
-            <option value="101+">Above 100 kW</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label for="connectorFilter">Connector Type</label>
-          <select 
-            id="connectorFilter" 
-            v-model="filters.connectorType" 
-            class="filter-select"
-          >
-            <option value="">All Connectors</option>
-            <option v-for="type in connectorTypes" :key="type" :value="type">
-              {{ type }}
-            </option>
-          </select>
-        </div>
-
-        <button 
-          class="clear-filters-button" 
-          @click="clearFilters"
-          v-if="isFiltersActive"
-        >
-          <i class="fas fa-times"></i>
-          Clear Filters
-        </button>
-      </div>
-
       <!-- Loading State -->
       <div v-if="loading" class="loading-container">
         <div class="spinner"></div>
@@ -198,53 +79,160 @@ onMounted(fetchStations)
         {{ error }}
       </div>
 
-      <!-- No Stations State -->
-      <div v-else-if="stations.length === 0" class="empty-state">
-        <i class="fas fa-charging-station"></i>
-        <p>No charging stations found. Add your first station!</p>
-      </div>
+      <!-- Map -->
+      <div v-else class="map-wrapper">
+        <l-map
+          v-model:zoom="zoom"
+          v-model:center="center"
+          :use-global-leaflet="false"
+          class="map"
+        >
+          <l-tile-layer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            layer-type="base"
+            name="OpenStreetMap"
+          ></l-tile-layer>
 
-      <!-- Stations Table -->
-      <div v-else class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Status</th>
-              <th>Power Output</th>
-              <th>Connector Type</th>
-              <th>Location</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="station in filteredStations" :key="station._id">
-              <td>{{ station.name }}</td>
-              <td>
-                <span :class="['status-badge', station.status === 'Active' ? 'active' : 'inactive']">
-                  {{ station.status }}
-                </span>
-              </td>
-              <td>{{ station.powerOutput }} kW</td>
-              <td>{{ station.connectorType }}</td>
-              <td>{{ station.latitude.toFixed(4) }}, {{ station.longitude.toFixed(4) }}</td>
-              <td class="actions">
-                <button class="action-button edit" @click="editStation(station._id)" title="Edit">
-                  <i class="fas fa-edit"></i>
-                </button>
-                <button class="action-button delete" @click="deleteStation(station._id)" title="Delete">
-                  <i class="fas fa-trash-alt"></i>
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+          <!-- Markers for each station -->
+          <l-marker
+            v-for="station in stations"
+            :key="station._id"
+            :lat-lng="[station.latitude, station.longitude]"
+            @click="handleMarkerClick(station)"
+          >
+            <l-popup>
+              <div class="popup-content">
+                <h3>{{ station.name }}</h3>
+                <div class="station-details">
+                  <p>
+                    <span class="label">Status:</span>
+                    <span :class="['status-badge', station.status === 'Active' ? 'active' : 'inactive']">
+                      {{ station.status }}
+                    </span>
+                  </p>
+                  <p><span class="label">Power Output:</span> {{ station.powerOutput }} kW</p>
+                  <p><span class="label">Connector Type:</span> {{ station.connectorType }}</p>
+                  <p><span class="label">Location:</span> {{ station.latitude.toFixed(4) }}, {{ station.longitude.toFixed(4) }}</p>
+                </div>
+                <div class="popup-actions">
+                  <button @click="router.push(`/edit-station/${station._id}`)" class="edit-button">
+                    <i class="fas fa-edit"></i> Edit
+                  </button>
+                </div>
+              </div>
+            </l-popup>
+          </l-marker>
+        </l-map>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.map-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 2rem;
+}
+
+.header-card {
+  max-width: 1200px;
+  margin: 0 auto 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+}
+
+.content-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+.map-wrapper {
+  height: 70vh;
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.map {
+  height: 100%;
+  width: 100%;
+}
+
+.popup-content {
+  padding: 0.5rem;
+  min-width: 200px;
+}
+
+.popup-content h3 {
+  margin: 0 0 0.5rem 0;
+  color: #2d3748;
+  font-size: 1.1rem;
+}
+
+.station-details {
+  margin: 0.5rem 0;
+}
+
+.station-details p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+.label {
+  font-weight: 500;
+  color: #4a5568;
+  margin-right: 0.5rem;
+}
+
+.status-badge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.status-badge.active {
+  background-color: #c6f6d5;
+  color: #2f855a;
+}
+
+.status-badge.inactive {
+  background-color: #fed7d7;
+  color: #c53030;
+}
+
+.popup-actions {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.edit-button {
+  padding: 0.3rem 0.6rem;
+  background: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: background 0.2s;
+}
+
+.edit-button:hover {
+  background: #3182ce;
+}
+
+/* Reuse existing styles from Home.vue for header buttons, loading, and error states */
 .page-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
@@ -560,7 +548,7 @@ tbody tr:hover {
     flex-direction: column;
   }
 
-  .header-button {
+  .header-button { 
     width: 100%;
   }
 

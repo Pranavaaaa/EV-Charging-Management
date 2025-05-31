@@ -12,7 +12,10 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 4001;
 
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173', // Your frontend URL
+  credentials: true
+}));
 app.use(bodyParser.json()); // to support JSON-encoded bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

@@ -176,6 +176,7 @@ GET /users/logout - User logout
 
 ### Station Routes
 ```http
+GET /ev/stations/:id - Get station by id
 GET /ev/stations - Get all stations
 POST /ev/stations - Create new station
 PUT /ev/stations/:id - Update station

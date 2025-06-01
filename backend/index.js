@@ -13,7 +13,7 @@ const app = express();
 const port = process.env.PORT || 4001;
 
 app.use(cors({
-  origin: 'http://localhost:5173', // Your frontend URL
+  origin: 'https://evconnect-v7v7.onrender.com/', // Your frontend URL
   credentials: true
 }));
 app.use(bodyParser.json()); // to support JSON-encoded bodies

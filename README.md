@@ -203,7 +203,8 @@ DELETE /ev/stations/:id - Delete station
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
 
 ## 👥 Authors
-- Pranav Londhe - [https://www.linkedin.com/in/pranavlondhe/](Pranav's Linkedin)
+
+Pranav Londhe- [Pranav Londhe](https://www.linkedin.com/in/pranavlondhe/)
 
 ## 🙏 Acknowledgments
 - Vue.js team for the excellent framework

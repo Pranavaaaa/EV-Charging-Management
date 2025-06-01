@@ -1,6 +1,8 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { apiService } from '../services/api'
+import { useAuth } from '../composables/useAuth'
 
 const router = useRouter()
 
@@ -24,37 +26,28 @@ const handleRegister = async (e) => {
   // Basic validation
   if (formData.value.password !== formData.value.confirmPassword) {
     error.value = 'Passwords do not match'
+      setTimeout(() => {
+          error.value = '';
+        }, 2000);
     return
   }
 
   if (formData.value.password.length < 6) {
     error.value = 'Password must be at least 6 characters long'
+      setTimeout(() => {
+        error.value = '';
+      }, 2000);
     return
   }
 
   try {
     loading.value = true
-    error.value = ''
-
-    const response = await fetch('http://localhost:4000/users/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        fullname: formData.value.fullname,
-        email: formData.value.email,
-        password: formData.value.password
-      })
+    await apiService.post('/users/register', formData.value = {
+      fullname: formData.value.fullname,
+      email: formData.value.email,
+      password: formData.value.password
     })
 
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Registration failed')
-    }
-
-    // Show success message
     successMessage.value = 'Registration successful! Redirecting to login...'
     
     // Clear form
@@ -67,7 +60,7 @@ const handleRegister = async (e) => {
 
     // Redirect after delay
     setTimeout(() => {
-      router.push('/login')
+      router.push('/home')
     }, 2000)
 
   } catch (err) {

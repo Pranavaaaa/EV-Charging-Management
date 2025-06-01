@@ -13,8 +13,6 @@ const registerUser = async (req, res, next) => {
 
       const { email, password, fullname } = req.body;
 
-      console.log(req.body, "user.controller");
-
       // Check if user already exists
       const existingUser = await userModel.find ({ email });
       if (existingUser.length > 0) {

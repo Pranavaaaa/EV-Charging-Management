@@ -44,11 +44,17 @@ const validateCoordinates = () => {
 
   if (isNaN(lat) || lat < -90 || lat > 90) {
     error.value = 'Invalid latitude. Must be between -90 and 90'
+    setTimeout(() => {
+      error.value = ''
+    }, 2000)
     return false
   }
 
   if (isNaN(lng) || lng < -180 || lng > 180) {
     error.value = 'Invalid longitude. Must be between -180 and 180'
+      setTimeout(() => {
+          error.value = '';
+        }, 2000);
     return false
   }
 

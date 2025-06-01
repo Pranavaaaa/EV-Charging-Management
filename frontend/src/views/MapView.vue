@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { apiService } from '../services/api';
 import 'leaflet/dist/leaflet.css';
 import * as L from 'leaflet';
+import { useAuth } from '../composables/useAuth';
 import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet';
 
 // Fix Leaflet default icon issue
@@ -38,6 +39,17 @@ const fetchStations = async () => {
 const handleMarkerClick = (station) => {
   // You can customize what happens when a marker is clicked
   console.log('Station clicked:', station);
+};
+
+const { logout } = useAuth();
+
+const handleLogout = async () => {
+  try {
+    await logout();
+    router.push('/login');
+  } catch (err) {
+    console.error('Logout failed:', err);
+  }
 };
 
 onMounted(() => {
